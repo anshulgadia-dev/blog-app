@@ -49,7 +49,7 @@ passport.use(new JWTStrategy(
         } catch (error) {
             return done(error,false);
         }
-    }))
+}));
 
 
 export default passport;

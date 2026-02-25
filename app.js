@@ -1,6 +1,6 @@
-import express, { urlencoded } from 'express'
 import dotenv from 'dotenv'
 dotenv.config();
+import express, { urlencoded } from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
 import { connectDB } from './config/db.js';
@@ -9,6 +9,7 @@ import blogRouter from './routes/blog.route.js';
 import passport from './config/passport.js'
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import path from 'path'
 
 const app = express();
 app.use(helmet());
@@ -17,9 +18,12 @@ app.use(cors({
     credentials : true
 }));
 app.use(express.json());
+app.use(express.text())
 app.use(passport.initialize());
 app.use(cookieParser());
 app.use(morgan('dev'))
+app.use(express.urlencoded({extended : true}))
+app.use("/uploads", express.static(path.resolve("uploads")));
 
 
 app.get('/' , (req,res)=>{

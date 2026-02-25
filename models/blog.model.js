@@ -21,8 +21,21 @@ const blogSchema = new mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : "User",
         required : true
+    },
+
+    likedBy : [
+        {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : "User"
+        }
+    ],   
+
+    likesCount : {
+        type : Number,
+        default : 0
     }
-}, { timeStamps : true})
+
+}, { timestamps : true})
 
 
 const Blog = model("Blog" , blogSchema);

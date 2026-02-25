@@ -8,7 +8,7 @@ function validate(schema) {
         message: error.details[0].message,
       });
     }
-    
+    console.log("I am inside validation middleware all ok")
     next();
   };
 }
