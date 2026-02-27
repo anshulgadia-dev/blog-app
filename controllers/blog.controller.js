@@ -48,7 +48,8 @@ export const updateBlog = async (req, res) => {
     if (category !== undefined) blog.category = category;
 
     await blog.save();
-
+    await redisClient.del("blogs")
+    await redisClient.del(`blog-${blog._id}`)
     return res.status(status.OK).json({
       success: true,
       message: "Blog updated successfully",
@@ -128,60 +129,40 @@ export const getBlogById = async (req, res) => {
 };
 
 
-export const addLike = async (req,res) => {
+export const toggleLike = async (req,res) => {
   try {
     const userId = req.user._id;
     const blogId = req.params.id;
-    const blog = await Blog.findOneAndUpdate(
-      {
-        _id : blogId,
-        likedBy : {$ne : userId}
-      },
-      {
-        $inc : {likesCount : 1},
-        $addToSet : {likedBy : userId}
-      },
-      {new : true}
-    );
+    const blog = await Blog.findOne({ _id : blogId });
+
     if(!blog){
       return res.status(status.NOT_FOUND).json({success : false , message : "Blog liked before or not found"});
     }
 
-    return res.status(status.OK).json({success : true , message : "Blog Liked"});
+    const alreadyLiked = blog.likedBy.includes(userId);
 
+    if(alreadyLiked){
+      blog.likedBy.pull(userId);
+      blog.likesCount = Math.max(0 , blog.likesCount - 1);
+      await blog.save();
+      res.status(status.OK).json({success : true , message : "Blog DisLiked"});
+    }
+    else{
+      blog.likedBy.push(userId);
+      blog.likesCount += 1;
+      await blog.save();
+      res.status(status.OK).json({success : true , message : "Blog Liked"});
+    }
+
+    await redisClient.del(`blog-${blog._id}`)
+    await redisClient.del("blogs")
+    return;
   } catch (error) {
     console.log("Error in addLike " , error);
     return res.status(status.INTERNAL_SERVER_ERROR).json({success : false , message : "Server Error"});
   }
 }
 
-
-export const disLike = async (req,res) => {
-  try {
-    const userId = req.user._id;
-    const blogId = req.params.id;
-    const blog = await Blog.findOneAndUpdate(
-      {
-        _id : blogId,
-        likedBy : userId
-      } , 
-      {
-        $pull : {likedBy : userId},
-        $inc : {likesCount : -1}
-      },
-      { new : true}
-    );
-
-    if(!blog){
-      return res.status(status.NOT_FOUND).json({success : false , message : "Blog not liked yet or not found"});
-    }
-
-    return res.status(status.OK).json({success : true , message : "Blog Disliked"});
-  } catch (error) {
-    console.log("Error in dislike ", error);
-    return res.status(status.INTERNAL_SERVER_ERROR).json({success : false, message : "Server Error"});
-  }
-};
 
 
 
