@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from 'passport';
+import passport from 'passport';
 
 import {
   getUserProfile,
@@ -10,14 +10,17 @@ import validate from '../middlewares/validation.middleware.js';
 import { loginSchema, registerSchema } from '../validations/auth.validation.js';
 
 const router = Router();
-
 router.post('/register', validate(registerSchema), registerUser);
 router.post(
   '/login',
   validate(loginSchema),
-  authenticate('local', { session: false }),
+  passport.authenticate('local', { session: false }),
   loginUser,
 );
-router.get('/profile', authenticate('jwt', { session: false }), getUserProfile);
+router.get(
+  '/profile',
+  passport.authenticate('jwt', { session: false }),
+  getUserProfile,
+);
 
 export default router;

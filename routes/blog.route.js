@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import passport from 'passport';
 
 import {
@@ -15,46 +15,28 @@ import { blogOwnerShipMiddleware } from '../middlewares/blogownership.middleware
 import upload from '../middlewares/upload.middleware.js';
 import validate from '../middlewares/validation.middleware.js';
 import { createBlogSchema } from '../validations/blog.validation.js';
+import { authorize as authorizeUser } from '../middlewares/authorize.middleware.js';
 
-const router = express.Router();
+const router = Router();
 
-router.post(
-  '/',
-  passport.authenticate('jwt', { session: false }),
-  upload.single('blogImage'),
-  validate(createBlogSchema),
-  createBlog,
-);
-router.delete(
-  '/:id',
-  passport.authenticate('jwt', { session: false }),
-  blogOwnerShipMiddleware,
-  deleteBlog,
-);
+// public routes
 router.get('/', getAllBlogs);
 router.get('/:id', getBlogById);
 
+router.use(passport.authenticate('jwt', { session: false }));
 router.post(
-  '/like/:id',
-  passport.authenticate('jwt', { session: false }),
-  toggleLike,
+  '/',
+  upload.single('blogImage'),
+  authorizeUser('user'),
+  validate(createBlogSchema),
+  createBlog,
 );
-// router.post('/dislike/:id' , passport.authenticate("jwt" , {session : false}) , disLike)
+router.delete('/:id', blogOwnerShipMiddleware, deleteBlog);
 
-router.post(
-  '/comment/:id',
-  passport.authenticate('jwt', { session: false }),
-  addComment,
-);
-router.delete(
-  '/comment/:id',
-  passport.authenticate('jwt', { session: false }),
-  removeComment,
-);
-router.put(
-  '/comment/:id',
-  passport.authenticate('jwt', { session: false }),
-  updateComment,
-);
+router.post('/like/:id', toggleLike);
+
+router.post('/comment/:id', addComment);
+router.delete('/comment/:id', removeComment);
+router.put('/comment/:id', updateComment);
 
 export default router;

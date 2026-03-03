@@ -76,7 +76,7 @@ export const getAllBlogs = async (req, res) => {
     let blogs;
     if (cachedData) {
       console.log('Serving from redis');
-      blogs = JSON.parse(cachedData);
+      blogs = await JSON.parse(cachedData);
       return res.status(status.OK).json({ success: true, blogs });
     }
 
