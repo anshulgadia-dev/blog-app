@@ -29,7 +29,6 @@ export default defineConfig([
     rules: {
       'prettier/prettier': 'error',
 
-      // 🔥 IMPORT ORDERING RULE
       'import/order': [
         'error',
         {
@@ -51,7 +50,6 @@ export default defineConfig([
             caseInsensitive: true,
           },
 
-          // ✅ PUT YOUR CODE HERE
           pathGroups: [
             {
               pattern: 'dotenv',
@@ -63,7 +61,6 @@ export default defineConfig([
         },
       ],
 
-      // optional but recommended
       'import/no-duplicates': 'error',
     },
   },

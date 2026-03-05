@@ -5,6 +5,7 @@ import {
   getUserProfile,
   loginUser,
   registerUser,
+  logoutUser,
 } from '../controllers/auth.controller.js';
 import validate from '../middlewares/validation.middleware.js';
 import { loginSchema, registerSchema } from '../validations/auth.validation.js';
@@ -14,7 +15,21 @@ router.post('/register', validate(registerSchema), registerUser);
 router.post(
   '/login',
   validate(loginSchema),
-  passport.authenticate('local', { session: false }),
+  (req, res, next) => {
+    passport.authenticate('local', { session: false }, (err, user, info) => {
+      if (err) return next(err);
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: info.message || 'Authentication failed',
+        });
+      }
+
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   loginUser,
 );
 router.get(
@@ -22,5 +37,6 @@ router.get(
   passport.authenticate('jwt', { session: false }),
   getUserProfile,
 );
+router.post('/logout', logoutUser);
 
 export default router;

@@ -27,14 +27,15 @@ export const registerUser = async (req, res) => {
     });
     res.cookie('accessToken', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
     });
 
     return res.status(status.CREATED).json({
       success: true,
       message: 'Registration Successful',
+      token: token,
     });
   } catch (error) {
     console.error('Error in creating user:', error);
@@ -48,18 +49,23 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const user = req.user;
+    console.log(user);
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
     res.cookie('accessToken', token, {
       httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 100,
     });
-    return res
-      .status(status.OK)
-      .json({ success: true, message: 'Login Succesful', user });
+
+    return res.status(status.OK).json({
+      success: true,
+      message: 'Login Succesful',
+      user: user,
+      token: token,
+    });
   } catch (error) {
     console.log('Error in Login Controller ', error);
     return res.status(status.INTERNAL_SERVER_ERROR).json({
@@ -81,4 +87,17 @@ export const getUserProfile = (req, res) => {
       .status(status.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: 'Server Error' });
   }
+};
+
+export const logoutUser = (req, res) => {
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  return res.status(status.OK).json({
+    success: true,
+    message: 'Logged out successfully',
+  });
 };

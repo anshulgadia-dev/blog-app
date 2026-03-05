@@ -11,11 +11,11 @@ import {
   removeComment,
   updateComment,
 } from '../controllers/blog.controller.js';
+import { authorize as authorizeUser } from '../middlewares/authorize.middleware.js';
 import { blogOwnerShipMiddleware } from '../middlewares/blogownership.middleware.js';
 import upload from '../middlewares/upload.middleware.js';
 import validate from '../middlewares/validation.middleware.js';
 import { createBlogSchema } from '../validations/blog.validation.js';
-import { authorize as authorizeUser } from '../middlewares/authorize.middleware.js';
 
 const router = Router();
 
@@ -23,7 +23,19 @@ const router = Router();
 router.get('/', getAllBlogs);
 router.get('/:id', getBlogById);
 
-router.use(passport.authenticate('jwt', { session: false }));
+router.use((req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err, user, info) => {
+    if (err) return next(err);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: info.message || 'Authenticatin Failed',
+      });
+    }
+    req.user = user;
+    next();
+  })(req, res, next);
+});
 router.post(
   '/',
   upload.single('blogImage'),

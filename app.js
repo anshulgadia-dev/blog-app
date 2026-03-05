@@ -15,10 +15,14 @@ import authRouter from './routes/auth.route.js';
 import blogRouter from './routes/blog.route.js';
 
 const app = express();
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  }),
+);
 app.use(
   cors({
-    origin: '*',
+    origin: 'http://localhost:5173',
     credentials: true,
   }),
 );

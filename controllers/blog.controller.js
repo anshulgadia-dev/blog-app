@@ -86,7 +86,7 @@ export const getAllBlogs = async (req, res) => {
 
     return res.status(status.OK).json({
       success: true,
-      blogs,
+      blogs: blogs,
     });
   } catch (error) {
     console.log('Get All Blogs Error ', error);
@@ -119,7 +119,7 @@ export const getBlogById = async (req, res) => {
     }
 
     await redisClient.setEx(CACHE_KEY, 60 * 5, JSON.stringify(blog));
-    return res.status(status.OK).json({ success: true, blog });
+    return res.status(status.OK).json({ success: true, blog: blog });
   } catch (error) {
     console.log('Get Blog Error ', error);
     return res.status(status.INTERNAL_SERVER_ERROR).json({
@@ -133,7 +133,7 @@ export const toggleLike = async (req, res) => {
   try {
     const userId = req.user._id;
     const blogId = req.params.id;
-    const blog = await Blog.findOne({ _id: blogId });
+    const blog = await Blog.findOne({ _id: blogId }).select('+likedBy');
 
     if (!blog) {
       return res
