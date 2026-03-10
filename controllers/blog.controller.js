@@ -227,7 +227,7 @@ export const addComment = async (req, res) => {
     const userId = req.user._id;
     const userName = req.user.name;
     const blogId = req.params.id;
-    const { message } = req.body;
+    const { message, parentCommentId } = req.body;
 
     const blog = await Blog.findById(blogId);
     if (!blog) {
@@ -237,16 +237,29 @@ export const addComment = async (req, res) => {
       });
     }
 
+    // If parentCommentId is provided, verify it exists and belongs to the same blog
+    if (parentCommentId) {
+      const parentComment = await Comment.findById(parentCommentId);
+      if (!parentComment || parentComment.blog.toString() !== blogId) {
+        return res.status(status.NOT_FOUND).json({
+          success: false,
+          message: 'Parent comment not found',
+        });
+      }
+    }
+
     const comment = await Comment.create({
       blog: blogId,
       user: userId,
       message,
+      parentCommentId: parentCommentId || null,
     });
 
     const responseComment = {
       _id: comment._id,
       message: comment.message,
       userName: userName,
+      parentCommentId: parentCommentId || null,
     };
 
     io.emit('new-comment', { comment: responseComment, blogId: blogId });
@@ -307,23 +320,33 @@ export const updateComment = async (req, res) => {
       {
         new: true,
       },
-    );
+    ).populate('user', 'name');
 
     if (!comment) {
       return res.status(status.NOT_FOUND).json({
         success: false,
-        message: 'Commnet not found or not commented by you',
+        message: 'Comment not found or not commented by you',
       });
     }
 
-    return res
-      .status(status.OK)
-      .json({ success: true, message: 'Comment Updated', comment });
+    const updatedComment = {
+      _id: comment._id,
+      message: comment.message,
+      userName: comment.user.name,
+      parentCommentId: comment.parentCommentId,
+      blogId: comment.blog,
+    };
+
+    return res.status(status.OK).json({
+      success: true,
+      message: 'Comment Updated',
+      comment: updatedComment,
+    });
   } catch (error) {
     console.log('Error in update comment', error);
     return res
       .status(status.INTERNAL_SERVER_ERROR)
-      .json({ success: true, message: 'Server Error' });
+      .json({ success: false, message: 'Server Error' });
   }
 };
 
@@ -332,19 +355,37 @@ export const getAllComments = async (req, res) => {
     const blogId = req.params.id;
 
     const comments = await Comment.find({ blog: blogId })
-      .populate('user')
+      .populate('user', 'name')
       .sort({ createdAt: -1 });
 
-    const formattedComments = comments.map(comment => ({
-      _id: comment._id,
-      message: comment.message,
-      userName: comment.user.name,
-    }));
+    const nestedComments = comments
+      .filter(comment => !comment.parentCommentId)
+      .map(mainComment => {
+        const replies = comments
+          .filter(
+            comment =>
+              comment.parentCommentId &&
+              comment.parentCommentId.toString() === mainComment._id.toString(),
+          )
+          .map(reply => ({
+            _id: reply._id,
+            message: reply.message,
+            userName: reply.user.name,
+            parentCommentId: reply.parentCommentId,
+          }));
+
+        return {
+          _id: mainComment._id,
+          message: mainComment.message,
+          userName: mainComment.user.name,
+          replies: replies,
+        };
+      });
 
     return res.status(200).json({
       success: true,
       message: 'Comments fetched',
-      comments: formattedComments,
+      comments: nestedComments,
       blogId: blogId,
     });
   } catch (error) {
@@ -354,5 +395,22 @@ export const getAllComments = async (req, res) => {
       success: false,
       message: 'Server Error',
     });
+  }
+};
+
+export const getMyAllBlogs = async (req, res) => {
+  try {
+    const id = req.user._id;
+    console.log(id);
+
+    const blogs = await Blog.find({ author: id });
+    return res
+      .status(status.OK)
+      .json({ success: true, message: 'Blogs Fetched', blogs });
+  } catch (error) {
+    console.log('Server Error ', error);
+    return res
+      .status(status.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: 'Server Error' });
   }
 };

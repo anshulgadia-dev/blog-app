@@ -1,23 +1,31 @@
 import mongoose, { model } from 'mongoose';
 
-const commentSchema = new mongoose.Schema({
-  blog: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Blog',
-    required: true,
-  },
+const commentSchema = new mongoose.Schema(
+  {
+    blog: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Blog',
+      required: true,
+    },
 
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    message: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+    },
+    parentCommentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Comment',
+      default: null,
+    },
   },
-  message: {
-    type: String,
-    trim: true,
-    maxlength: 1000,
-  },
-});
+  { timestamps: true },
+);
 
 const Comment = model('Comment', commentSchema);
 

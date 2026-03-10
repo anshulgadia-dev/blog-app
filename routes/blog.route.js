@@ -11,6 +11,7 @@ import {
   removeComment,
   updateComment,
   getAllComments,
+  getMyAllBlogs,
 } from '../controllers/blog.controller.js';
 import { authorize as authorizeUser } from '../middlewares/authorize.middleware.js';
 import { blogOwnerShipMiddleware } from '../middlewares/blogownership.middleware.js';
@@ -39,6 +40,8 @@ router.use((req, res, next) => {
     next();
   })(req, res, next);
 });
+
+// router.get('/myblogs', getMyAllBlogs);
 router.post(
   '/',
   upload.single('blogImage'),
