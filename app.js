@@ -1,3 +1,4 @@
+import { createServer } from 'http';
 import path from 'path';
 
 import dotenv from 'dotenv';
@@ -8,6 +9,7 @@ import cors from 'cors';
 import express, { urlencoded, json, text } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { Server } from 'socket.io';
 
 import { connectDB } from './config/db.js';
 import passport from './config/passport.js';
@@ -41,8 +43,25 @@ app.get('/', (req, res) => {
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/blog', blogRouter);
 
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: 'http://localhost:5173',
+    credentials: true,
+  },
+});
+
+io.on('connection', socket => {
+  console.log('Client Connected', socket.id);
+  socket.on('disconnect', () => {
+    console.log('Cliend Disconnected', socket.id);
+  });
+});
+
+export { io };
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   connectDB();
 });

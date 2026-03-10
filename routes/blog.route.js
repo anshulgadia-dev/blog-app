@@ -10,6 +10,7 @@ import {
   addComment,
   removeComment,
   updateComment,
+  getAllComments,
 } from '../controllers/blog.controller.js';
 import { authorize as authorizeUser } from '../middlewares/authorize.middleware.js';
 import { blogOwnerShipMiddleware } from '../middlewares/blogownership.middleware.js';
@@ -22,7 +23,9 @@ const router = Router();
 // public routes
 router.get('/', getAllBlogs);
 router.get('/:id', getBlogById);
+router.get('/comment/:id', getAllComments);
 
+// protected routes
 router.use((req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err, user, info) => {
     if (err) return next(err);
